@@ -34,6 +34,20 @@ class Trainer:
         # weight of regularization term
         self.Lambda = params["Lambda"]
 
+    @staticmethod
+    def checkpoint(epoch, model, optimizer, val_loss):
+        """ 保存模型 checkpoint
+        """
+        state = {
+            'epoch': epoch,
+            # only save parameters without structure
+            'model': model,
+            'optimizer': optimizer.state_dict(),
+            'val_loss': val_loss,
+        }
+        file_path = f"./result/checkpoint.pth"
+        torch.save(state, file_path)
+
     def cal_loss(self, scores, regul_term):
         positive_loss = torch.sum(self.criterion(-1 * scores))
         tot_loss = positive_loss + self.Lambda * regul_term
@@ -83,12 +97,9 @@ class Trainer:
             # <<< for batch in val_loader
         avg_val_loss = sum(batch_val_losses) / len(batch_val_losses)
         print(f"epoch {epoch + 1} val loss: {avg_val_loss: .6f}",
-              end='\n\n')
+              end='\n')
         # <<< val
         return avg_train_loss, avg_val_loss
-
-    def save_model(self):
-        pass
 
     def train(self, args: dict):
         epochs = args["epochs"]
@@ -98,11 +109,31 @@ class Trainer:
             "train_loss": [],
             "val_loss": []
         }
+        # for checkpoint
+        lowest_val_loss = float('inf')
+
+        # for early stopping
+        monitor = float('inf')
+        patience = args["patience"]
+        epoch_left = patience
 
         for epoch in range(epochs):
             train_loss, val_loss = self.one_epoch(epoch)
             result["train_loss"].append(train_loss)
             result["val_loss"].append(val_loss)
+
+            # early-stopping with checkpoint
+            if val_loss < lowest_val_loss:
+                lowest_val_loss = val_loss
+                monitor = val_loss
+                epoch_left = patience
+                self.checkpoint(epoch+1, self.model, self.optimizer, val_loss)
+                print(f"epoch {epoch + 1}  => saving checkpoint with val_loss:{val_loss :.6f}", end="\n\n")
+            elif val_loss > monitor:
+                epoch_left -= 1
+                if epoch_left == 0:
+                    print(f"epoch {epoch+1} stop with Early-Stopping, patience: {patience}", end='\n\n')
+                    break
         # <<< for epoch
-        torch.save(self.model, f"./result/model_epoch{epochs}.pkl")
+        # torch.save(self.model, f"./result/model_epoch{epochs}.pkl")
         draw_graph(result, smooth=False)

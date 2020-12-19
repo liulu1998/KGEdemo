@@ -20,7 +20,7 @@ def draw_graph(result: dict, smooth: bool):
         return smoothed_points
 
     # 横坐标 epochs
-    epochs = range(1, result["epochs"] + 1)
+    epochs = range(1, len(result["val_loss"]) + 1)
     # 平滑
     if smooth:
         for name in ["train_acc", "val_acc", "train_loss", "val_loss"]:
