@@ -7,18 +7,18 @@ import torch
 # 是否加载模型
 LOAD_MODEL = False
 # 是否 test
-TEST = False
+TEST = True
 
 args = {
     "data_dir": "./data/wn18am/",
     "embedding_size": 128,
     "batch_size": 128,
-    "epochs": 10,
+    "epochs": 1000,
     "optimizer": "Adagrad",
     # early-stopping patience
-    "patience": 2,
+    "patience": 20,
     # learning rate
-    "lr": 1,
+    "lr": 1e-3,
     # weight of regularization term
     "Lambda": 1e-3,
     "Zeta": 1e-5,
@@ -46,11 +46,9 @@ if __name__ == '__main__':
         print("start training !")
         trainer.train(args)
 
+    # load test set and evaluate model
     if TEST:
-        # load test set and evaluate model
         test_loader = dataset.loaders["test"]
-
         tester = Tester(model, dataset, test_loader)
         mrr = tester.test()
-
         print(f"MRR: {mrr}")

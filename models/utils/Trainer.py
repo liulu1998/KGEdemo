@@ -22,7 +22,7 @@ class Trainer:
             self.optimizer = optim.Adagrad(
                 self.model.parameters(),
                 lr=params["lr"],
-                # weight_decay=1e-2
+                weight_decay=1e-5
             )
         elif params["optimizer"] is "Adam":
             self.optimizer = optim.Adam(
